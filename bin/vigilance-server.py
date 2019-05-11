@@ -7,7 +7,7 @@ import datetime
 import re
 import time
 
-test = True
+test = False
 
 risks = ["vent violent", "pluie-innondation", "orages", "innondation", "neige-verglas", "canicule", "grand-froid", "avalanches", "vagues-submersion"]
 
