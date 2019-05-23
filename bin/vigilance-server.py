@@ -16,7 +16,7 @@ def getTimeHash():
     return d.year*365*24*60+d.month*30*24*60+d.day*24*60+d.hour*60+d.minute
 
 def getVigilanceData():
-    url = "https://www.vigimeteo.com/data/NXFR49_LFPW_.xml?{}".format(getTimeHash())
+    url = "http://www.vigimeteo.com/data/NXFR49_LFPW_.xml?{}".format(getTimeHash())
     if test:
         stream = open('test/jaune-vent-violent+littoral-vagues.xml')
     else:
