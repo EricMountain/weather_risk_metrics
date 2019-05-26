@@ -3,7 +3,7 @@
 from prometheus_client import start_http_server, Gauge
 import urllib.request
 import random
-import datetime
+from datetime import datetime
 import re
 import time
 
@@ -23,6 +23,7 @@ def getVigilanceData():
         stream = urllib.request.urlopen(url)
     regex = r'<PHENOMENE departement="(?P<dept>\w+)" phenomene="(?P<risk>\d+)" couleur="(?P<level>\d)" dateDebutEvtTU="(?P<start>\d{14})" dateFinEvtTU="(?P<end>\d{14})"/>'
     pattern = re.compile(regex)
+    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     results = []
     for line in stream:
         try:
@@ -31,7 +32,9 @@ def getVigilanceData():
             pass
         matches = pattern.match(line)
         if matches:
-            results.append(matches.groupdict())
+            data = matches.groupdict()
+            if data['end'] > now:
+                results.append(data)
     return results
 
 def latestVigilanceMetrics(gauge=Gauge):
