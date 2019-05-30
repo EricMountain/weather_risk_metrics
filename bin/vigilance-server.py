@@ -12,7 +12,7 @@ test = False
 risks = ["vent violent", "pluie-innondation", "orages", "innondation", "neige-verglas", "canicule", "grand-froid", "avalanches", "vagues-submersion"]
 
 def getTimeHash():
-    d = datetime.datetime.now()
+    d = datetime.now()
     return d.year*365*24*60+d.month*30*24*60+d.day*24*60+d.hour*60+d.minute
 
 def getVigilanceData():
