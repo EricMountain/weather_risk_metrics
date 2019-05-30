@@ -23,7 +23,6 @@ def getVigilanceData():
         stream = urllib.request.urlopen(url)
     regex = r'<PHENOMENE departement="(?P<dept>\w+)" phenomene="(?P<risk>\d+)" couleur="(?P<level>\d)" dateDebutEvtTU="(?P<start>\d{14})" dateFinEvtTU="(?P<end>\d{14})"/>'
     pattern = re.compile(regex)
-    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     results = []
     for line in stream:
         try:
@@ -33,13 +32,19 @@ def getVigilanceData():
         matches = pattern.match(line)
         if matches:
             data = matches.groupdict()
-            if data['end'] > now:
-                results.append(data)
+            results.append(data)
     return results
 
 def latestVigilanceMetrics(gauge=Gauge):
+    now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     for result in getVigilanceData():
-        gauge.labels(dept=result['dept'], risk=risks[int(result['risk'])-1], startZ=result['start'], endZ=result['end']).set(int(result['level']))
+        if result['end'] > now:
+            gauge.labels(dept=result['dept'], risk=risks[int(result['risk'])-1], startZ=result['start'], endZ=result['end']).set(int(result['level']))
+        else:
+            try:
+                gauge.remove(dept=result['dept'], risk=risks[int(result['risk'])-1], startZ=result['start'], endZ=result['end'])
+            except ValueError:
+                pass
 
 # Create a metric to track time spent and requests made.
 gauge = Gauge('meteorological_risk', 'Weather risk', ['dept', 'risk', 'startZ', 'endZ'])
