@@ -15,15 +15,27 @@ def getTimeHash():
     d = datetime.now()
     return d.year*365*24*60+d.month*30*24*60+d.day*24*60+d.hour*60+d.minute
 
-def getVigilanceData():
+def getStream():
     url = "http://www.vigimeteo.com/data/NXFR49_LFPW_.xml?{}".format(getTimeHash())
+    stream = None
     if test:
         stream = open('test/jaune-vent-violent+littoral-vagues.xml')
     else:
-        stream = urllib.request.urlopen(url)
+        try:
+            stream = urllib.request.urlopen(url)
+        except urllib.error.URLError as e:
+            print(f'Error fetching URL: {e}')
+            pass
+    return stream
+
+def getVigilanceData():
     regex = r'<PHENOMENE departement="(?P<dept>\w+)" phenomene="(?P<risk>\d+)" couleur="(?P<level>\d)" dateDebutEvtTU="(?P<start>\d{14})" dateFinEvtTU="(?P<end>\d{14})"/>'
     pattern = re.compile(regex)
     results = []
+
+    stream = getStream()
+    if stream is None: return results
+
     for line in stream:
         try:
             line = line.decode('utf-8')
