@@ -55,7 +55,13 @@ def latestVigilanceMetrics(gauge=Gauge):
         else:
             try:
                 gauge.remove(dept=result['dept'], risk=risks[int(result['risk'])-1], startZ=result['start'], endZ=result['end'])
-            except ValueError:
+            except ValueError as e:
+                print(f'Warning: incorrect use of gauge.remove(): {e}')
+                pass
+            except TypeError:
+                # Seems we get this if the label set hadn't already been defined, which can happen if
+                # we handle an entry with an early end time before handling lines with end times beyond
+                # now
                 pass
 
 # Create a metric to track time spent and requests made.
