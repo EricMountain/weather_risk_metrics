@@ -9,7 +9,7 @@ import time
 
 test = False
 
-risks = ["vent violent", "pluie-innondation", "orages", "innondation", "neige-verglas", "canicule", "grand-froid", "avalanches", "vagues-submersion"]
+risks = ["vent violent", "pluie-inondation", "orages", "inondation", "neige-verglas", "canicule", "grand-froid", "avalanches", "vagues-submersion"]
 
 def getTimeHash():
     d = datetime.now()
