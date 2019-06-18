@@ -59,7 +59,7 @@ def latestVigilanceMetrics(gauge=Gauge):
             except ValueError as e:
                 print(f'Warning: incorrect use of gauge.remove(): {e}')
                 pass
-            except TypeError:
+            except TypeError as e:
                 # Seems we get this if the label set hadn't already been defined, which can happen if
                 # we handle an entry with an early end time before handling lines with end times beyond
                 # now
