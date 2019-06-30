@@ -8,8 +8,13 @@ import re
 import time
 
 test = False
-
 risks = ["vent violent", "pluie-inondation", "orages", "inondation", "neige-verglas", "canicule", "grand-froid", "avalanches", "vagues-submersion"]
+
+# Maps a (dept, risk, startZ, endZ) tuple to the round in which it was last set
+cache = {}
+
+# Create a metric to track time spent and requests made.
+gauge = Gauge('meteorological_risk', 'Weather risk', ['dept', 'risk', 'startZ', 'endZ'])
 
 def getTimeHash():
     d = datetime.now()
@@ -44,25 +49,43 @@ def getVigilanceData():
         matches = pattern.match(line)
         if matches:
             data = matches.groupdict()
+            data['risk0'] = int(data['risk'])-1
             results.append(data)
     return results
 
-def latestVigilanceMetrics(gauge=Gauge):
+def latestVigilanceMetrics(gauge=Gauge, cacheRound=int):
     now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     for result in getVigilanceData():
         if result['end'] > now:
             level = int(result['level'])
         else:
             level = 0
-        gauge.labels(dept=result['dept'], risk=risks[int(result['risk'])-1], startZ=result['start'], endZ=result['end']).set(level)
+
+        key = (result['dept'], result['risk0'], result['start'], result['end'])
+        cache[key] = cacheRound
+
+        gauge.labels(dept=result['dept'], risk=risks[result['risk0']], startZ=result['start'], endZ=result['end']).set(level)
         print(f'{result!r} --> {level}')
 
-# Create a metric to track time spent and requests made.
-gauge = Gauge('meteorological_risk', 'Weather risk', ['dept', 'risk', 'startZ', 'endZ'])
+def checkDeadCacheEntries(gauge=Gauge, cacheRound=int):
+    '''
+    Checks if a particular combination has been dropped from the output
+    produced by vigimeteo. We need to zero these entries else they will stay stuck
+    at whatever their last value was.
+    '''
+
+    for key, value in list(cache.items()):
+        if value != cacheRound:
+            print(f'{key!r} --> {0}, deleting cache entry')
+            gauge.labels(dept=key[0], risk=key[1], startZ=key[2], endZ=key[3]).set(0)
+            del cache[key]
 
 if __name__ == '__main__':
     # Start up the server to expose the metrics.
     start_http_server(9696)
+    cacheRound = 0
     while True:
-        latestVigilanceMetrics(gauge)
+        cacheRound = 1 - cacheRound
+        latestVigilanceMetrics(gauge, cacheRound)
+        checkDeadCacheEntries(gauge, cacheRound)
         time.sleep(3600)
