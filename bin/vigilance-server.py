@@ -65,7 +65,7 @@ def latestVigilanceMetrics(gauge=Gauge, cacheRound=int):
         cache[key] = cacheRound
 
         gauge.labels(dept=result['dept'], risk=risks[result['risk0']], startZ=result['start'], endZ=result['end']).set(level)
-        print(f'{result!r} --> {level}')
+        print(f'{result!r} --> {level}, added to cache with round {cacheRound}')
 
 def checkDeadCacheEntries(gauge=Gauge, cacheRound=int):
     '''
@@ -86,6 +86,8 @@ if __name__ == '__main__':
     cacheRound = 0
     while True:
         cacheRound = 1 - cacheRound
+        print(f'Starting new round… (index {cacheRound})')
         latestVigilanceMetrics(gauge, cacheRound)
         checkDeadCacheEntries(gauge, cacheRound)
+        print('Round completed.')
         time.sleep(3600)
