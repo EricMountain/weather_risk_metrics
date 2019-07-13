@@ -49,7 +49,6 @@ def getVigilanceData():
         matches = pattern.match(line)
         if matches:
             data = matches.groupdict()
-            data['risk0'] = int(data['risk'])-1
             results.append(data)
     return results
 
@@ -61,10 +60,11 @@ def latestVigilanceMetrics(gauge=Gauge, cacheRound=int):
         else:
             level = 0
 
-        key = (result['dept'], result['risk0'], result['start'], result['end'])
+        risk = risks[int(result['risk'])-1]
+        key = (result['dept'], risk, result['start'], result['end'])
         cache[key] = cacheRound
 
-        gauge.labels(dept=result['dept'], risk=risks[result['risk0']], startZ=result['start'], endZ=result['end']).set(level)
+        gauge.labels(dept=result['dept'], risk=risk, startZ=result['start'], endZ=result['end']).set(level)
         print(f'{result!r} --> {level}, added to cache with round {cacheRound}')
 
 def checkDeadCacheEntries(gauge=Gauge, cacheRound=int):
