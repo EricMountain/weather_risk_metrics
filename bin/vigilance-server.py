@@ -13,8 +13,9 @@ risks = ["vent violent", "pluie-inondation", "orages", "inondation", "neige-verg
 # Maps a (dept, risk, startZ, endZ) tuple to the round in which it was last set
 cache = {}
 
-# Create a metric to track time spent and requests made.
-gauge = Gauge('meteorological_risk', 'Weather risk', ['dept', 'risk', 'startZ', 'endZ'])
+# Create metrics to track time spent and requests made.
+gauge_full = Gauge('meteorological_risk_full', 'Weather risk', ['dept', 'risk', 'startZ', 'endZ'])
+gauge = Gauge('meteorological_risk', 'Weather risk', ['dept', 'risk'])
 
 def getTimeHash():
     d = datetime.now()
@@ -54,6 +55,7 @@ def getVigilanceData():
 
 def latestVigilanceMetrics(gauge=Gauge, cacheRound=int):
     now = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    deptRiskLevelMap = dict()
     for result in getVigilanceData():
         if result['end'] > now:
             level = int(result['level'])
@@ -64,7 +66,16 @@ def latestVigilanceMetrics(gauge=Gauge, cacheRound=int):
         key = (result['dept'], risk, result['start'], result['end'])
         cache[key] = cacheRound
 
-        gauge.labels(dept=result['dept'], risk=risk, startZ=result['start'], endZ=result['end']).set(level)
+        dept = result['dept']
+        gauge_full.labels(dept=dept, risk=risk, startZ=result['start'], endZ=result['end']).set(level)
+
+        if (dept, risk) not in deptRiskLevelMap:
+            deptRiskLevelMap[(dept, risk)] = level
+            gauge.labels(dept=dept, risk=risk).set(level)
+        elif level > deptRiskLevelMap[(dept, risk)]:
+            deptRiskLevelMap[(dept, risk)] = level
+            gauge.labels(dept=dept, risk=risk).set(level)
+            
         print(f'{key!r} --> {level}, added to cache with round {cacheRound}')
 
 def checkDeadCacheEntries(gauge=Gauge, cacheRound=int):
